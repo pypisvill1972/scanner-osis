@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan QR OSIS</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0f172a;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .box {
+      text-align: center;
+    }
+    #reader {
+      width: 300px;
+      margin: 20px auto;
+      border: 4px solid #22c55e;
+      border-radius: 16px;
+      background: black;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h2>SCAN QR CODE</h2>
+    <p>Arahkan QR ke kamera</p>
+    <div id="reader"></div>
+  </div>
+
+  <script>
+    const scanner = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(cameras => {
+      scanner.start(
+        cameras[0].id,
+        { fps: 10, qrbox: 250 },
+        text => {
+          // pindah ke halaman voting Apps Script
+          window.location.href = text;
+        }
+      );
+    }).catch(err => {
+      alert("Kamera tidak bisa diakses. Pastikan izin kamera diaktifkan.");
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
