@@ -8,8 +8,6 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    * { box-sizing: border-box; }
-
     body {
       margin: 0;
       height: 100vh;
@@ -28,42 +26,28 @@
       padding: 20px;
     }
 
-    h1 {
-      margin-bottom: 6px;
-      font-size: 28px;
-    }
-
-    p {
-      margin-top: 0;
-      margin-bottom: 18px;
-      opacity: 0.8;
-    }
+    h1 { margin-bottom: 6px; }
+    p { opacity: .8; }
 
     #reader {
       width: 300px;
       height: 300px;
-      margin: 0 auto;
+      margin: 20px auto;
       border-radius: 18px;
       overflow: hidden;
       border: 4px solid #22c55e;
-      box-shadow: 0 0 20px rgba(34,197,94,0.4);
       background: black;
+      display: none;
     }
 
     button {
-      margin-top: 12px;
-      padding: 10px 16px;
-      border-radius: 10px;
+      padding: 14px 20px;
+      border-radius: 12px;
       border: none;
       background: #22c55e;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-    }
-
-    .hint {
-      margin-top: 12px;
-      font-size: 13px;
-      opacity: 0.7;
     }
   </style>
 </head>
@@ -71,52 +55,36 @@
 <body>
   <div class="container">
     <h1>SCAN QR CODE</h1>
-    <p>Arahkan QR ke kamera</p>
+    <p>Tap tombol untuk mulai scan</p>
+
+    <button id="startBtn">📷 MULAI SCAN</button>
 
     <div id="reader"></div>
-
-    <button id="switchCam">🔄 Ganti Kamera</button>
-
-    <div class="hint">Kamera otomatis mendeteksi QR</div>
   </div>
 
   <script>
-    history.pushState(null, null, location.href);
-    window.onpopstate = () => history.pushState(null, null, location.href);
-
     const html5QrCode = new Html5Qrcode("reader");
-    let cameras = [];
-    let currentCameraId = null;
     let isScanned = false;
 
-    Html5Qrcode.getCameras().then(devices => {
-      cameras = devices;
-      currentCameraId = cameras[0].id;
-      startCamera(currentCameraId);
-    });
+    document.getElementById("startBtn").onclick = () => {
+      document.getElementById("reader").style.display = "block";
+      document.getElementById("startBtn").style.display = "none";
 
-    function startCamera(cameraId) {
-      html5QrCode.stop().catch(() => {}).finally(() => {
-        html5QrCode.start(
-          cameraId,
-          { fps: 10, qrbox: { width: 220, height: 220 } },
-          decodedText => {
-            if (isScanned) return;
-            isScanned = true;
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          if (isScanned) return;
+          isScanned = true;
 
-            html5QrCode.stop().then(() => {
-              window.location.replace(decodedText);
-            });
-          }
-        );
+          html5QrCode.stop().then(() => {
+            window.location.replace(decodedText);
+          });
+        }
+      ).catch(err => {
+        alert("Kamera tidak bisa diakses.\nPastikan izin kamera aktif.");
+        console.error(err);
       });
-    }
-
-    document.getElementById("switchCam").onclick = () => {
-      if (cameras.length < 2) return;
-      const idx = cameras.findIndex(c => c.id === currentCameraId);
-      currentCameraId = cameras[(idx + 1) % cameras.length].id;
-      startCamera(currentCameraId);
     };
   </script>
 </body>
