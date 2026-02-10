@@ -9,9 +9,7 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -55,6 +53,16 @@
       background: black;
     }
 
+    button {
+      margin-top: 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #22c55e;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     .hint {
       margin-top: 14px;
       font-size: 13px;
@@ -76,28 +84,27 @@
 
     <div id="reader"></div>
 
-    <div class="hint">
-      Kamera akan otomatis mendeteksi QR
-    </div>
+    <!-- tombol ganti kamera -->
+    <button id="switchCam">🔄 Ganti Kamera</button>
 
-    <div class="footer">
-      Pemilihan Pra-OSIS
-    </div>
+    <div class="hint">Kamera akan otomatis mendeteksi QR</div>
+    <div class="footer">Pemilihan OSIS</div>
   </div>
 
   <script>
     // Anti back & refresh (kiosk-friendly)
     history.pushState(null, null, location.href);
-    window.onpopstate = () => {
-      history.pushState(null, null, location.href);
-    };
+    window.onpopstate = () => history.pushState(null, null, location.href);
 
     let isScanned = false;
+    let cameras = [];
+    let currentCameraIndex = 0;
+
     const html5QrCode = new Html5Qrcode("reader");
 
-    function startScanner() {
+    function startScanner(cameraId) {
       html5QrCode.start(
-        { facingMode: "environment" },
+        cameraId ? cameraId : { facingMode: "environment" },
         {
           fps: 10,
           qrbox: { width: 220, height: 220 }
@@ -106,23 +113,32 @@
           if (isScanned) return;
           isScanned = true;
 
-          // Hentikan kamera sebelum pindah halaman
           html5QrCode.stop().then(() => {
-            // Redirect ke link di QR (Apps Script voting)
             window.location.replace(decodedText);
           });
         },
-        (error) => {
-          // error diabaikan agar tidak spam
-        }
-      ).catch((err) => {
+        () => {}
+      ).catch(err => {
         alert("Kamera tidak bisa diakses.\nPastikan izin kamera diaktifkan.");
         console.error(err);
       });
     }
 
-    // Auto start saat halaman terbuka
-    startScanner();
+    // ambil daftar kamera
+    Html5Qrcode.getCameras().then(devices => {
+      cameras = devices;
+      startScanner(cameras[0]?.id);
+    });
+
+    // ganti kamera
+    document.getElementById("switchCam").onclick = () => {
+      if (cameras.length < 2) return;
+
+      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+      html5QrCode.stop().then(() => {
+        startScanner(cameras[currentCameraIndex].id);
+      });
+    };
   </script>
 </body>
 </html>
