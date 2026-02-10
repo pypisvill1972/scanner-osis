@@ -90,6 +90,29 @@
     <div class="hint">Kamera akan otomatis mendeteksi QR</div>
     <div class="footer">Pemilihan OSIS</div>
   </div>
+<script>
+  function playBeep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+if (ctx.state === "suspended") {
+  ctx.resume();
+}
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880; // nada beep
+    gainNode.gain.value = 0.2;
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+      ctx.close();
+    }, 120); // durasi beep (ms)
+  }
+</script>
 
   <script>
     // Anti back & refresh (kiosk-friendly)
@@ -112,6 +135,8 @@
         (decodedText) => {
           if (isScanned) return;
           isScanned = true;
+
+          playBeep(); // 🔔 BEEP DI SINI
 
           html5QrCode.stop().then(() => {
             window.location.replace(decodedText);
