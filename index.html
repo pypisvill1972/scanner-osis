@@ -5,13 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Scan QR OSIS</title>
 
-  <!-- Library QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -34,14 +31,12 @@
     h1 {
       margin-bottom: 6px;
       font-size: 28px;
-      letter-spacing: 1px;
     }
 
     p {
       margin-top: 0;
       margin-bottom: 18px;
       opacity: 0.8;
-      font-size: 15px;
     }
 
     #reader {
@@ -55,16 +50,20 @@
       background: black;
     }
 
-    .hint {
-      margin-top: 14px;
-      font-size: 13px;
-      opacity: 0.7;
+    button {
+      margin-top: 12px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      background: #22c55e;
+      font-weight: bold;
+      cursor: pointer;
     }
 
-    .footer {
-      margin-top: 20px;
-      font-size: 12px;
-      opacity: 0.4;
+    .hint {
+      margin-top: 12px;
+      font-size: 13px;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -76,53 +75,49 @@
 
     <div id="reader"></div>
 
-    <div class="hint">
-      Kamera akan otomatis mendeteksi QR
-    </div>
+    <button id="switchCam">🔄 Ganti Kamera</button>
 
-    <div class="footer">
-      Pemilihan OSIS
-    </div>
+    <div class="hint">Kamera otomatis mendeteksi QR</div>
   </div>
 
   <script>
-    // Anti back & refresh (kiosk-friendly)
     history.pushState(null, null, location.href);
-    window.onpopstate = () => {
-      history.pushState(null, null, location.href);
-    };
+    window.onpopstate = () => history.pushState(null, null, location.href);
 
-    let isScanned = false;
     const html5QrCode = new Html5Qrcode("reader");
+    let cameras = [];
+    let currentCameraId = null;
+    let isScanned = false;
 
-    function startScanner() {
-      html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 220, height: 220 }
-        },
-        (decodedText) => {
-          if (isScanned) return;
-          isScanned = true;
+    Html5Qrcode.getCameras().then(devices => {
+      cameras = devices;
+      currentCameraId = cameras[0].id;
+      startCamera(currentCameraId);
+    });
 
-          // Hentikan kamera sebelum pindah halaman
-          html5QrCode.stop().then(() => {
-            // Redirect ke link di QR (Apps Script voting)
-            window.location.replace(decodedText);
-          });
-        },
-        (error) => {
-          // error diabaikan agar tidak spam
-        }
-      ).catch((err) => {
-        alert("Kamera tidak bisa diakses.\nPastikan izin kamera diaktifkan.");
-        console.error(err);
+    function startCamera(cameraId) {
+      html5QrCode.stop().catch(() => {}).finally(() => {
+        html5QrCode.start(
+          cameraId,
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          decodedText => {
+            if (isScanned) return;
+            isScanned = true;
+
+            html5QrCode.stop().then(() => {
+              window.location.replace(decodedText);
+            });
+          }
+        );
       });
     }
 
-    // Auto start saat halaman terbuka
-    startScanner();
+    document.getElementById("switchCam").onclick = () => {
+      if (cameras.length < 2) return;
+      const idx = cameras.findIndex(c => c.id === currentCameraId);
+      currentCameraId = cameras[(idx + 1) % cameras.length].id;
+      startCamera(currentCameraId);
+    };
   </script>
 </body>
 </html>
